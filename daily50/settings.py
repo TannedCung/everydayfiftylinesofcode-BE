@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import environ
+
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,11 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ls%!yd*#ag25^u=*t((aa%koo^)2cwr54b=7!li9h8*yz1+=$#'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECRET_KEY = env('DJANGO_SECRET_KEY', default='your-default-secret-key')  # Use default for development
+DEBUG = env.bool('DJANGO_DEBUG', default=True)  # Convert to boolean
 
 ALLOWED_HOSTS = []
 
@@ -37,6 +39,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',      # Required by allauth
+
+    # allauth for authentication
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+    'rest_framework',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -47,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware'
 ]
 
 ROOT_URLCONF = 'daily50.urls'
@@ -101,15 +113,28 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # settings.py
 AUTHENTICATION_BACKENDS = [
-    'social_core.backends.github.GithubOAuth2',
+    'allauth.account.auth_backends.AuthenticationBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-SOCIAL_AUTH_GITHUB_KEY = '<your_github_client_id>'
-SOCIAL_AUTH_GITHUB_SECRET = '<your_github_client_secret>'
+SITE_ID = 1
 
+# URL where users will be redirected after login/logout
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'APP': {
+            'client_id': env('SOCIAL_AUTH_GITHUB_KEY'),
+            'secret': env('SOCIAL_AUTH_GITHUB_SECRET'),
+        }
+    }
+}
 
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
