@@ -27,7 +27,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='your-default-secret-key')  # Use default for development
 DEBUG = env.bool('DJANGO_DEBUG', default=True)  # Convert to boolean
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Allow all origins (for development purposes only, not recommended in production)
+# CORS_ALLOW_ALL_ORIGINS = True
+
+# Additional settings (optional)
+# Allow cookies to be sent with cross-origin requests
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
@@ -48,9 +56,11 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'rest_framework',
     'drf_spectacular',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
