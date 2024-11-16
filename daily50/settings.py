@@ -55,6 +55,10 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
     'rest_framework',
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    'dj_rest_auth.registration',
+    "oauth2_provider",
     'drf_spectacular',
     'corsheaders',
 ]
@@ -127,11 +131,15 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+REST_USE_JWT = True
+
 SITE_ID = 1
 
 # URL where users will be redirected after login/logout
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+GITHUB_CALLBACK = env('GITHUB_CALLBACK', default='http://localhost:19981/accounts/github/login/callback/')
 
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
