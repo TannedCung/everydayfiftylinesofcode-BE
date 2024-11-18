@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     "oauth2_provider",
     'drf_spectacular',
     'corsheaders',
+
+    'core'
 ]
 
 MIDDLEWARE = [
@@ -72,7 +74,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware'
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'daily50.urls'
@@ -141,6 +143,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 GITHUB_CALLBACK = env('GITHUB_CALLBACK', default='http://localhost:19981/accounts/github/login/callback/')
 
+SOCIALACCOUNT_STORE_TOKENS = True
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
         'APP': {
@@ -151,7 +154,29 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API Documentation',
+    'DESCRIPTION': 'Your API description here.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SECURITY_DEFINITIONS': {
+        'Bearer Token': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+        },
+    },
+    'SECURITY': [{'Bearer Token': []}],
 }
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
