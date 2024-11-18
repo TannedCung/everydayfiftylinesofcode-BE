@@ -4,16 +4,20 @@ from django.http import JsonResponse
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
+from rest_framework.permissions import AllowAny
 from django.conf import settings
+from allauth.socialaccount.models import SocialAccount, SocialToken
 
 import requests
 from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 
 @api_view(['GET'])
+@authentication_classes([])  # Disable authentication
+@permission_classes([AllowAny])  # Allow all users to access
 def github_callback(request):
     """
     Handles GitHub OAuth callback.
@@ -60,6 +64,12 @@ def github_callback(request):
         "refresh": str(refresh),
         "access": str(refresh.access_token),
     }
+
+    social_account = SocialAccount.objects.get(user=user, provider='github')
+    social_token = SocialToken.objects.create(
+        account=social_account, 
+        token=access_token  # this is the token fetched from GitHub's API
+    )
 
     return Response({
         "message": "Login successful",
