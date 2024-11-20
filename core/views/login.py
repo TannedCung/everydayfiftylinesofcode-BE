@@ -65,7 +65,11 @@ def github_callback(request):
         "access": str(refresh.access_token),
     }
 
-    social_account = SocialAccount.objects.get(user=user, provider='github')
+    social_account, social_account_created = SocialAccount.objects.get_or_create(
+        user=user,
+        provider='github',
+        defaults={"extra_data": user_info}
+    )
     social_token = SocialToken.objects.create(
         account=social_account, 
         token=access_token  # this is the token fetched from GitHub's API
