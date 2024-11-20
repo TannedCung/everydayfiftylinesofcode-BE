@@ -70,9 +70,9 @@ def github_callback(request):
         provider='github',
         defaults={"extra_data": user_info}
     )
-    social_token = SocialToken.objects.create(
-        account=social_account, 
-        token=access_token  # this is the token fetched from GitHub's API
+    social_token, token_created = SocialToken.objects.get_or_create(
+        account=social_account,
+        defaults={"token": access_token}
     )
 
     return Response({
