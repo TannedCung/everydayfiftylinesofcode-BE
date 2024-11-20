@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
 @api_view(['GET'])
 @authentication_classes([])  # Disable authentication
 @permission_classes([AllowAny])  # Allow all users to access
@@ -41,7 +42,6 @@ def github_callback(request):
         return Response({"error": "Failed to fetch access token"}, status=400)
 
     access_token = token_response.json().get("access_token")
-    print(f"[DEBUG]: access_token {access_token}")
     # Step 2: Use the access token to fetch GitHub user info
     user_info_url = "https://api.github.com/user"
     user_info_headers = {"Authorization": f"Bearer {access_token}"}
@@ -53,10 +53,12 @@ def github_callback(request):
 
     user_info = user_info_response.json()
     github_username = user_info.get("login")
+    github_id = user_info.get("id")  # Unique GitHub user ID
     email = user_info.get("email") or f"{github_username}@github.com"
 
     # Step 3: Check if the user exists, otherwise create one
-    user, created = User.objects.get_or_create(username=github_username, defaults={"email": email})
+    user, created = User.objects.get_or_create(
+        username=github_username, defaults={"email": email})
 
     # Step 4: Generate JWT tokens
     refresh = RefreshToken.for_user(user)
@@ -68,7 +70,9 @@ def github_callback(request):
     social_account, social_account_created = SocialAccount.objects.get_or_create(
         user=user,
         provider='github',
-        defaults={"extra_data": user_info}
+        defaults={
+            "uid": str(github_id),  # Use GitHub's unique ID as the UID
+            "extra_data": user_info}
     )
     social_token, token_created = SocialToken.objects.get_or_create(
         account=social_account,
