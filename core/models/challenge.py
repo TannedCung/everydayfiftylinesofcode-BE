@@ -9,8 +9,8 @@ class Challenge(models.Model):
 
     name = models.CharField(max_length=255)  # e.g., "Daily Commit Challenge"
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)  # Type of challenge
+    description = models.TextField()  # Changed to TextField for flexibility
     target_value = models.PositiveIntegerField()  # e.g., 5 commits/day
-    frequency = models.IntegerField(help_text="Number of days users must meet the goal consecutively.")
     start_date = models.DateField()  # When the challenge starts
     end_date = models.DateField(null=True, blank=True)  # Optional end date
     created_at = models.DateTimeField(auto_now_add=True)

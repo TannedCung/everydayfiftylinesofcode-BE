@@ -19,7 +19,7 @@ class GitHubCommit(models.Model):
 
 class GithubFileChange(models.Model):
     github_commit = models.ForeignKey(GitHubCommit, on_delete=models.CASCADE)
-    sha = models.CharField(unique=True, db_index=True, primary_key=True, max_length=100)
+    sha = models.CharField(db_index=True, max_length=100)
     filename = models.TextField()  # Changed to TextField for flexibility
     status = models.CharField(max_length=50)  # Kept as CharField as it is short
     additions = models.PositiveIntegerField()
