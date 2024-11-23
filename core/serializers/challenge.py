@@ -4,4 +4,4 @@ from core.models.challenge import Challenge
 class ChallengeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Challenge
-        fields = ['id', 'name', 'description', 'commitment_type', 'frequency', 'start_date', 'end_date']
+        fields = ['id', 'name', 'type', 'description', 'target_value', 'start_date', 'end_date']

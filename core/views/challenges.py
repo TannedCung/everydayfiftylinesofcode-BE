@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import Challenge, UserActivity
-from .serializers import ChallengeSerializer, UserActivitySerializer
+from core.models.challenge import Challenge
+from core.serializers.challenge import ChallengeSerializer
 
 class ChallengeViewSet(viewsets.ModelViewSet):
     queryset = Challenge.objects.all()
