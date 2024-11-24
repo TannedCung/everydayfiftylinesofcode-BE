@@ -78,6 +78,12 @@ def github_callback(request):
         account=social_account,
         defaults={"token": access_token}
     )
+    if not token_created and social_token.token != access_token:
+        # Update the token if it has changed
+        social_token.token = access_token
+        social_token.save()
+
+    print(f"[DEBUG]: Github token: {access_token}")
 
     return Response({
         "message": "Login successful",
