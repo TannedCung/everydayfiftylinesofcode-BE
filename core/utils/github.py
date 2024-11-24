@@ -29,7 +29,7 @@ def fetch_github_commits(user):
 
     # Make a request to the GitHub API
     headers = {
-        'Authorization': f'token {token}',
+        'Authorization': f'Bearer {token}',
         'Accept': 'application/vnd.github.v3+json'
     }
     url = f'https://api.github.com/users/{user.username}/events'
@@ -72,6 +72,11 @@ def fetch_github_commits(user):
                 sha=sha,
                 defaults={
                     "author": author_data,
+                    "committer": commit_details.get("commit", {}).get("committer", {}),
+                    "date": commit_details.get("commit", {}).get("committer", {}).get("date", "").split("T")[0],
+                    "additions": commit_details.get("stats", {}).get("additions", 0),
+                    "deletions": commit_details.get("stats", {}).get("deletions", 0),
+                    "changes": commit_details.get("stats", {}).get("total", 0),
                     "message": message,
                     "url": url
                 }
