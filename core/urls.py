@@ -1,4 +1,5 @@
 from django.urls import path, include
+from core.views.user_challenge import UserChallengeViewSet
 from rest_framework.routers import DefaultRouter
 from .views.login import user_profile, github_callback
 from .views.user_activity import get_user_commits, GitHubEventViewSet, GitHubCommitViewSet, GithubFileChangeViewSet
@@ -11,6 +12,8 @@ router.register(r'github/commits', GitHubCommitViewSet, basename='commit')
 router.register(r'github/changes', GithubFileChangeViewSet, basename='change')
 
 router.register(f'challenge', ChallengeViewSet, basename='challenge')
+router.register(r'user_challenges', UserChallengeViewSet, basename='userchallenge')
+
 
 # Add other non-viewset endpoints
 urlpatterns = [
