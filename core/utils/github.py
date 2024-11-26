@@ -32,7 +32,7 @@ def fetch_github_commits(user):
         'Authorization': f'Bearer {token}',
         'Accept': 'application/vnd.github.v3+json'
     }
-    url = f'https://api.github.com/users/{user.username}/events'
+    url = f'https://api.github.com/users/{user.username}/events?per_page=100'
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     "oauth2_provider",
     'drf_spectacular',
+    "drf_spectacular_sidecar",  # Optional, for better UI assets
     'corsheaders',
 
     'core'
