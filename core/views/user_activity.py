@@ -13,6 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Count, Sum, F
 from django.utils.timezone import now
+from datetime import timedelta, date
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 
 class GitHubEventViewSet(viewsets.ReadOnlyModelViewSet):
@@ -62,13 +63,16 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
         Query parameters:
           - `start_date`: The start date for the range (ISO format, e.g., 2024-11-01).
           - `end_date`: The end date for the range (ISO format, e.g., 2024-11-10).
-        """ 
+        """
         today = now().date()
-        current_year_start = today.replace(month=1, day=1)
-        current_year_end = today.replace(month=12, day=31)
+        last_30_days = today - timedelta(days=30)
 
-        start_date = request.query_params.get('start_date', current_year_start.isoformat())
-        end_date = request.query_params.get('end_date', current_year_end.isoformat())
+        # Get the date range from the request or default to today and the last 30 days
+        start_date = request.query_params.get('start_date', last_30_days.isoformat())
+        end_date = request.query_params.get('end_date', today.isoformat())
+
+        start_date = date.fromisoformat(start_date)
+        end_date = date.fromisoformat(end_date)
 
         # Query to aggregate commits and changes by date
         commits_by_day = (
@@ -81,15 +85,36 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
             .order_by('date')
         )
 
-        # Transform results into a list of dictionaries
-        data = [
-            {
-                "date": entry['date'].isoformat(),
+        # Create a mapping of existing data
+        commits_dict = {
+            entry['date']: {
                 "total_commits": entry['total_commits'],
-                "total_changes": entry['total_changes'],
+                "total_changes": entry['total_changes']
             }
             for entry in commits_by_day
-        ]
+        }
+
+        # Generate a list of all dates in the range
+        def daterange(start_date, end_date):
+            for n in range((end_date - start_date).days + 1):
+                yield start_date + timedelta(n)
+
+        # Fill in missing dates with zeros
+        data = []
+        for single_date in daterange(start_date, end_date):
+            date_key = single_date.isoformat()
+            if single_date in commits_dict:
+                data.append({
+                    "date": date_key,
+                    "total_commits": commits_dict[single_date]["total_commits"],
+                    "total_changes": commits_dict[single_date]["total_changes"],
+                })
+            else:
+                data.append({
+                    "date": date_key,
+                    "total_commits": 0,
+                    "total_changes": 0,
+                })
 
         return Response(data)
 
