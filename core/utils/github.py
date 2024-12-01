@@ -162,9 +162,10 @@ def fetch_contribution_calendar(user, year=None):
         return response.json()
     return {"error": "Failed to fetch contribution calendar."}
 
-def calculate_activity_streak(contribution_calendar, daily_goal):
+def calculate_activity_streak(contribution_calendar, daily_goal, today=None):
     """
     Calculates the current and longest streak from the contribution calendar.
+    today: int: The number of the day today
     """
     contributions = [
         day["contributionCount"]
@@ -173,7 +174,9 @@ def calculate_activity_streak(contribution_calendar, daily_goal):
     ]
     streak = 0
     max_streak = 0
-    for count in contributions[::-1]:
+    for idx, count in enumerate(contributions):
+        if today and idx > today:
+            break
         if count >= daily_goal:
             streak += 1
             max_streak = max(max_streak, streak)

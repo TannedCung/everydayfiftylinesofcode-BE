@@ -10,7 +10,8 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.db.models import Count, Sum, F
 from django.utils.timezone import now
-from datetime import timedelta, date
+from django.utils import timezone
+from datetime import timedelta, date, datetime
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 class GitHubEventViewSet(viewsets.ReadOnlyModelViewSet):
@@ -120,6 +121,10 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="activity-streak")
     def activity_streak(self, request):
+        def get_current_day():
+            today = now()
+            first_day = timezone.make_aware(datetime(2024, 1, 1), timezone.get_current_timezone())
+            return (today - first_day).days + 1
         """
         Endpoint to retrieve the current and longest streak of coding activity.
         Query parameters:
@@ -138,6 +143,9 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
         else:
             # If no year is provided, use the current year
             year = now().year
+        today_th = None
+        if year == now().year:
+            today_th = get_current_day()
 
         # Fetch the contribution data from GitHub for the specified year
         contribution_data = fetch_contribution_calendar(user, year)
@@ -145,7 +153,7 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({"error": contribution_data["error"]}, status=400)
 
         # Calculate the activity streak
-        streak_data = calculate_activity_streak(contribution_data["data"]["user"]["contributionsCollection"]["contributionCalendar"], daily_goal)
+        streak_data = calculate_activity_streak(contribution_data["data"]["user"]["contributionsCollection"]["contributionCalendar"], daily_goal, today_th)
         return Response(streak_data)
 
     @action(detail=False, methods=["get"], url_path="daily-goal-progress")
