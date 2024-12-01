@@ -174,7 +174,7 @@ def calculate_activity_streak(contribution_calendar, daily_goal):
     streak = 0
     max_streak = 0
     for count in contributions[::-1]:
-        if count > daily_goal:
+        if count >= daily_goal:
             streak += 1
             max_streak = max(max_streak, streak)
         else:
