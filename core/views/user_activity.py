@@ -4,7 +4,7 @@ from rest_framework import viewsets
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from core.models.github_activity import GitHubEvent, GitHubCommit, GithubFileChange
 from core.serializers.github_activity import GitHubEventSerializer, GitHubCommitSerializer, GithubFileChangeSerializer
-from core.utils.github import fetch_github_commits, fetch_contribution_calendar, calculate_activity_streak, calculate_daily_goal_progress
+from core.utils.github import fetch_commits_with_changes, fetch_github_commits, fetch_contribution_calendar, calculate_activity_streak, calculate_daily_goal_progress
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
@@ -33,19 +33,19 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
         summary="Get commits and changes by day",
         description=(
             "Retrieve the total number of commits and changes grouped by day "
-            "within the specified date range. Defaults to the current year if no dates are provided."
+            "within the specified date range. Defaults to the last 30 days if no dates are provided."
         ),
         parameters=[
             OpenApiParameter(
                 name="start_date",
-                description="Start date for the range (ISO 8601 format, e.g., '2024-01-01'). Defaults to January 1 of the current year.",
+                description="Start date for the range (ISO 8601 format, e.g., '2024-01-01'). Defaults to 30 days ago.",
                 required=False,
                 type=str,
                 location=OpenApiParameter.QUERY,
             ),
             OpenApiParameter(
                 name="end_date",
-                description="End date for the range (ISO 8601 format, e.g., '2024-12-31'). Defaults to December 31 of the current year.",
+                description="End date for the range (ISO 8601 format, e.g., '2024-12-31'). Defaults to today.",
                 required=False,
                 type=str,
                 location=OpenApiParameter.QUERY,
@@ -53,71 +53,39 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
         ],
         responses={200: None},  # Replace `None` with your response serializer if needed
     )
-    @action(detail=False, methods=["get"], url_path="by_day")
-    def by_day(self, request):
+    @action(detail=False, methods=["get"], url_path="commits-with-changes")
+    def commits_with_changes(self, request):
         """
-        Endpoint to get the number of commits and changes in blocks of days.
+        Endpoint to fetch commits along with their changes grouped by day.
         Query parameters:
-          - `start_date`: The start date for the range (ISO format, e.g., 2024-11-01).
-          - `end_date`: The end date for the range (ISO format, e.g., 2024-11-10).
+        - `start_date`: Optional start date for the range (defaults to 30 days ago if not provided).
+        - `end_date`: Optional end date for the range (defaults to today if not provided).
         """
-        today = now().date()
-        last_30_days = today - timedelta(days=30)
+        user = request.user
+        
+        # Get today's date and calculate the date 30 days ago
+        today = datetime.today()
+        default_start_date = (today - timedelta(days=30)).date().strftime('%Y-%m-%d')
+        default_end_date = today.date().strftime('%Y-%m-%d')
 
-        # Get the date range from the request or default to today and the last 30 days
-        start_date = request.query_params.get("start_date", last_30_days.isoformat())
-        end_date = request.query_params.get("end_date", today.isoformat())
+        # Retrieve dates from query parameters or use defaults
+        start_date = request.query_params.get("start_date", default_start_date)
+        end_date = request.query_params.get("end_date", default_end_date)
 
-        start_date = date.fromisoformat(start_date)
-        end_date = date.fromisoformat(end_date)
+        # Ensure the dates are in the correct format (ISO 8601)
+        try:
+            start_date = datetime.fromisoformat(start_date).date()
+            end_date = datetime.fromisoformat(end_date).date()
+        except ValueError:
+            return Response({"error": "Invalid date format. Please use ISO 8601 format (e.g., '2024-01-01')."}, status=400)
 
-        # Query to aggregate commits and changes by date
-        commits_by_day = (
-            GitHubCommit.objects.filter(date__gte=start_date, date__lte=end_date)
-            .values("date")
-            .annotate(
-                total_commits=Count("sha"),
-                total_changes=Sum(F("additions") + F("deletions")),
-            )
-            .order_by("date")
-        )
+        # Fetch commits with changes using the utility function
+        commit_data = fetch_commits_with_changes(user, start_date, end_date)
 
-        # Create a mapping of existing data
-        commits_dict = {
-            entry["date"]: {
-                "total_commits": entry["total_commits"],
-                "total_changes": entry["total_changes"],
-            }
-            for entry in commits_by_day
-        }
+        if "error" in commit_data:
+            return Response({"error": commit_data["error"]}, status=400)
 
-        # Generate a list of all dates in the range
-        def daterange(start_date, end_date):
-            for n in range((end_date - start_date).days + 1):
-                yield start_date + timedelta(n)
-
-        # Fill in missing dates with zeros
-        data = []
-        for single_date in daterange(start_date, end_date):
-            date_key = single_date.isoformat()
-            if single_date in commits_dict:
-                data.append(
-                    {
-                        "date": date_key,
-                        "total_commits": commits_dict[single_date]["total_commits"],
-                        "total_changes": commits_dict[single_date]["total_changes"],
-                    }
-                )
-            else:
-                data.append(
-                    {
-                        "date": date_key,
-                        "total_commits": 0,
-                        "total_changes": 0,
-                    }
-                )
-
-        return Response(data)
+        return Response(commit_data)
 
     @action(detail=False, methods=["get"], url_path="activity-streak")
     def activity_streak(self, request):
@@ -188,7 +156,6 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
             contribution_data["data"]["user"]["contributionsCollection"]["contributionCalendar"], daily_goal
         )
         return Response(progress_data)
-
 
     @extend_schema(
         summary="The year for getting th graph",

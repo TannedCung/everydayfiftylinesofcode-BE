@@ -6,6 +6,142 @@ from datetime import datetime, timedelta
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
+def initialize_commit_details(start_date, end_date):
+    """
+    Initialize a dictionary to store commit details for each day between start_date and end_date.
+
+    Args:
+        start_date (str): The start date in the format "YYYY-MM-DD".
+        end_date (str): The end date in the format "YYYY-MM-DD".
+
+    Returns:
+        dict: A dictionary where the keys are dates and the values are empty lists.
+    """
+    # Convert the input strings to datetime objects
+    start_date = datetime.strptime(start_date[:10], "%Y-%m-%d")
+    end_date = datetime.strptime(end_date[:10], "%Y-%m-%d")
+
+    commit_details = {}
+    current_date = start_date
+    while current_date <= end_date:
+        commit_details[current_date.strftime("%Y-%m-%d")] = []
+        current_date += timedelta(days=1)
+    return commit_details
+
+def fetch_commits_with_changes(user, start_date, end_date):
+    """
+    Fetches the daily commits with changes (additions, deletions) and their details for the user
+    using the GitHub GraphQL API. Handles pagination for both repositories and commits.
+    """
+    token = get_github_access_token(user)
+    if not token:
+        return {"error": "GitHub token not found for this user."}
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Ensure dates are formatted as ISO-8601 strings with timezone information
+    start_date = f"{start_date}T00:00:00Z"
+    end_date = f"{end_date}T23:59:59Z"
+
+    # GraphQL query with pagination for repositories and commits
+    query = """
+    query($username: String!, $start_date: GitTimestamp!, $end_date: GitTimestamp!, $repoCursor: String, $commitCursor: String) {
+      user(login: $username) {
+        repositories(first: 100, after: $repoCursor) {
+          pageInfo {
+            endCursor
+            hasNextPage
+          }
+          nodes {
+            name
+            defaultBranchRef {
+              target {
+                ... on Commit {
+                  history(since: $start_date, until: $end_date, first: 100, after: $commitCursor) {
+                    pageInfo {
+                      endCursor
+                      hasNextPage
+                    }
+                    edges {
+                      node {
+                        committedDate
+                        additions
+                        deletions
+                        oid
+                        message
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    variables = {
+        "username": user.username,
+        "start_date": start_date,
+        "end_date": end_date,
+        "repoCursor": None,
+        "commitCursor": None,
+    }
+    commit_details = initialize_commit_details(start_date, end_date)
+
+
+    while True:  # Loop for repository pagination
+        response = requests.post(
+            GITHUB_GRAPHQL_URL, json={"query": query, "variables": variables}, headers=headers
+        )
+
+        if response.status_code != 200:
+            return {"error": f"Failed to fetch commits. {response.json()}"}
+
+        data = response.json()
+        user_data = data.get("data", {}).get("user", {})
+        repositories = user_data.get("repositories", {}).get("nodes", [])
+        repo_page_info = user_data.get("repositories", {}).get("pageInfo", {})
+
+        # Process each repository
+        for repo in repositories:
+            if not repo.get("defaultBranchRef"):
+                continue
+
+            # Fetch commits with pagination for each repository
+            while True:  # Loop for commit pagination within a repository
+                history = repo["defaultBranchRef"]["target"].get("history", {})
+                for commit in history.get("edges", []):
+                    commit_data = commit["node"]
+                    commit_date = commit_data["committedDate"][:10]  # Extract YYYY-MM-DD
+                    commit_entry = {
+                        "oid": commit_data["oid"],
+                        "message": commit_data["message"],
+                        "additions": commit_data["additions"],
+                        "deletions": commit_data["deletions"],
+                    }
+
+                    if commit_date not in commit_details:
+                        commit_details[commit_date] = []
+
+                    commit_details[commit_date].append(commit_entry)
+
+                # Update commit cursor and check if there's another page
+                commit_page_info = history.get("pageInfo", {})
+                if commit_page_info.get("hasNextPage"):
+                    variables["commitCursor"] = commit_page_info["endCursor"]
+                else:
+                    variables["commitCursor"] = None
+                    break
+
+        # Update repository cursor and check if there's another page
+        if repo_page_info.get("hasNextPage"):
+            variables["repoCursor"] = repo_page_info["endCursor"]
+        else:
+            break
+
+    return commit_details
 
 def get_github_access_token(user):
     try:
@@ -175,7 +311,7 @@ def calculate_activity_streak(contribution_calendar, daily_goal, today=None):
     streak = 0
     max_streak = 0
     for idx, count in enumerate(contributions):
-        if today and idx > today:
+        if today and idx + 1 >= today:
             break
         if count >= daily_goal:
             streak += 1
