@@ -7,15 +7,18 @@ from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework.permissions import AllowAny
 from django.conf import settings
 from allauth.socialaccount.models import SocialAccount, SocialToken
-
 import requests
 from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from rest_framework import status
+from ..serializers.user import RefreshTokenSerializer
 
 
+# View for GitHub OAuth callback (no change needed)
 @api_view(['GET'])
 @authentication_classes([])  # Disable authentication
 @permission_classes([AllowAny])  # Allow all users to access
@@ -48,7 +51,6 @@ def github_callback(request):
     user_info_response = requests.get(user_info_url, headers=user_info_headers)
 
     if user_info_response.status_code != 200:
-        print(user_info_response)
         return Response({"error": "Failed to fetch user info"}, status=400)
 
     user_info = user_info_response.json()
@@ -60,7 +62,7 @@ def github_callback(request):
     user, created = User.objects.get_or_create(
         username=github_username, defaults={"email": email})
 
-    # Step 4: Generate JWT tokens
+    # Step 4: Generate JWT tokens (access and refresh tokens)
     refresh = RefreshToken.for_user(user)
     tokens = {
         "refresh": str(refresh),
@@ -92,6 +94,35 @@ def github_callback(request):
     }, status=200)
 
 
+class RefreshTokenView(APIView):
+    """
+    View to refresh the access token using the refresh token.
+    """
+    serializer_class = RefreshTokenSerializer
+    authentication_classes = []  # Disable authentication
+    permission_classes = [AllowAny]  # Allow all users to access
+
+    def post(self, request):
+        # Use the serializer to validate the incoming refresh token
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            refresh_token = serializer.validated_data['refresh_token']
+            try:
+                # Decode and validate the refresh token
+                refresh = RefreshToken(refresh_token)
+                new_access_token = str(refresh.access_token)
+
+                return Response({
+                    "access_token": new_access_token
+                }, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# View to get user profile (remains unchanged)
 @login_required
 def user_profile(request):
     user = request.user
