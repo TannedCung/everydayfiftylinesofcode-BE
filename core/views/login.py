@@ -57,6 +57,7 @@ def github_callback(request):
     github_username = user_info.get("login")
     github_id = user_info.get("id")  # Unique GitHub user ID
     email = user_info.get("email") or f"{github_username}@github.com"
+    avatar_url = user_info.get("avatar_url")
 
     # Step 3: Check if the user exists, otherwise create one
     user, created = User.objects.get_or_create(
@@ -90,7 +91,7 @@ def github_callback(request):
     return Response({
         "message": "Login successful",
         "tokens": tokens,
-        "user": {"username": user.username, "email": user.email}
+        "user": {"username": user.username, "email": user.email, "avatar_url": avatar_url}
     }, status=200)
 
 
