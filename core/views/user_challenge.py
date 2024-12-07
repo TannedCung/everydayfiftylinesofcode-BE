@@ -7,6 +7,8 @@ from rest_framework.decorators import action
 from core.serializers.user_challenge import UserChallengeSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.db import models
+from django.db import IntegrityError
+from rest_framework import status
 
 class UserChallengeViewSet(ModelViewSet):
     queryset = UserChallenge.objects.all()
@@ -18,6 +20,23 @@ class UserChallengeViewSet(ModelViewSet):
         Return challenges for the authenticated user only.
         """
         return UserChallenge.objects.filter(user=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data, 
+                status=status.HTTP_201_CREATED, 
+                headers=headers
+            )
+        except IntegrityError:
+            return Response(
+                {"error": "You have already joined this challenge"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     def perform_create(self, serializer):
         """

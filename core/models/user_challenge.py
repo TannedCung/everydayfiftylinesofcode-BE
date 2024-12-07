@@ -13,6 +13,9 @@ class UserChallenge(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
     progress_detail = models.JSONField(default=dict)  # Added JSONField for detailed progress tracking
+    
+    class Meta:
+        unique_together = ['user', 'challenge']
 
     def __str__(self):
         return f"{self.user.username} - {self.challenge.title} - {self.progress}%"
