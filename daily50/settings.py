@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     "drf_spectacular_sidecar",  # Optional, for better UI assets
     'corsheaders',
+    'storages',
 
     'core'
 ]
@@ -77,6 +78,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 ROOT_URLCONF = 'daily50.urls'
 
@@ -200,3 +203,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Minio settings
+AWS_ACCESS_KEY_ID = env('ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('STORAGE_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = env('S3_ENDPOINT_URL')
+AWS_S3_USE_SSL = env.bool('S3_USE_SSL', default=False)
+AWS_QUERYSTRING_AUTH = env.bool('QUERYSTRING_AUTH', default=True)
+AWS_DEFAULT_ACL = env('DEFAULT_ACL', default=None)

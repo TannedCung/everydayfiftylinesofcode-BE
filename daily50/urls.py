@@ -6,8 +6,6 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.github.views import oauth2_login, oauth2_callback
 
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),  # This includes all allauth URLs
