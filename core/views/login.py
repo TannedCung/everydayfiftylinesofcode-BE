@@ -108,14 +108,15 @@ class RefreshTokenView(APIView):
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
-            refresh_token = serializer.validated_data['refresh_token']
+            refresh_token = serializer.validated_data['refresh']
             try:
                 # Decode and validate the refresh token
                 refresh = RefreshToken(refresh_token)
                 new_access_token = str(refresh.access_token)
 
                 return Response({
-                    "access_token": new_access_token
+                    "refresh": refresh_token,
+                    "access": new_access_token
                 }, status=status.HTTP_200_OK)
             except Exception as e:
                 return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
