@@ -10,6 +10,8 @@ class MinioStorage(S3Boto3Storage):
 def challenge_image_path(instance, filename):
     return f'challenges/{instance.id}/{filename}'
 
+storage = MinioStorage()
+
 class Challenge(models.Model):
     TYPE_CHOICES = [
         ('commits', 'Commits'),
@@ -54,7 +56,6 @@ class Challenge(models.Model):
     def get_presigned_urls(self):
         """Generate presigned URLs with 1 hour expiration"""
         urls = {}
-        storage = MinioStorage()
         
         if self.background_image:
             urls['background_url'] = storage.url(
