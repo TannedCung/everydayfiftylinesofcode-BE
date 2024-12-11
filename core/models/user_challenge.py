@@ -16,6 +16,10 @@ class UserChallenge(models.Model):
     
     class Meta:
         unique_together = ['user', 'challenge']
+        indexes = [
+            models.Index(fields=['user', 'challenge']),  # Composite index
+            models.Index(fields=['progress']),  # Index for sorting/filtering by progress
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.challenge.title} - {self.progress}%"
