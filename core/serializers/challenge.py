@@ -2,7 +2,7 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from typing import Optional, Dict
 from ..models.challenge import Challenge
-
+from ..models.user_challenge import UserChallenge 
 class ChallengeSerializer(serializers.ModelSerializer):
     background_url = serializers.SerializerMethodField()
     logo_url = serializers.SerializerMethodField()
@@ -39,3 +39,31 @@ class ChallengeSerializer(serializers.ModelSerializer):
             instance.logo.delete(save=False)
             
         return super().update(instance, validated_data)
+
+class ChallengeUserSerializer(serializers.ModelSerializer):
+    user_info = serializers.SerializerMethodField()
+    challenge_progress = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserChallenge
+        fields = [
+            'user_info',
+            'challenge_progress',
+            'start_date',
+            'highest_streak',
+            'progress',
+            'progress_detail'
+        ]
+
+    def get_user_info(self, obj):
+        return {
+            'id': obj.user.id,
+            'username': obj.user.username
+        }
+
+    def get_challenge_progress(self, obj):
+        return {
+            'start_date': obj.start_date,
+            'highest_streak': obj.highest_streak,
+            'progress': obj.progress
+        }
