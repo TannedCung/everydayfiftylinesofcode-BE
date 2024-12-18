@@ -12,7 +12,7 @@ class GitHubEvent(models.Model):
 
 class GitHubCommit(models.Model):
     github_event = models.ForeignKey(GitHubEvent, on_delete=models.CASCADE)
-    sha = models.CharField(unique=True, db_index=True, primary_key=True, max_length=100)
+    oid = models.CharField(unique=True, db_index=True, primary_key=True, max_length=100)
     author = models.JSONField(default=dict)
     committer = models.JSONField(default=dict)
     date = models.DateField(null=True)

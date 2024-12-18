@@ -4,6 +4,8 @@ from rest_framework import viewsets
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from core.models.github_activity import GitHubEvent, GitHubCommit, GithubFileChange
 from core.serializers.github_activity import GitHubEventSerializer, GitHubCommitSerializer, GithubFileChangeSerializer
+from core.tasks.sync_challenges import update_user_challenges
+from core.tasks.sync_commit_data import update_github_commits
 from core.utils.github import fetch_commits_with_changes, fetch_github_commits, fetch_contribution_calendar, calculate_activity_streak, calculate_daily_goal_progress
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, action
@@ -85,6 +87,7 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
         if "error" in commit_data:
             return Response({"error": commit_data["error"]}, status=400)
 
+        update_github_commits.delay(user.id, commit_data)
         return Response(commit_data)
 
     @action(detail=False, methods=["get"], url_path="activity-streak")
@@ -198,6 +201,11 @@ class GitHubCommitViewSet(viewsets.ReadOnlyModelViewSet):
         contribution_data = fetch_contribution_calendar(user, year)
         if "error" in contribution_data:
             return Response({"error": contribution_data["error"]}, status=400)
+        
+        # update_user_challenges.delay(
+        #     user.id, 
+        #     contribution_data
+        # )
         return Response(contribution_data)
 
 
