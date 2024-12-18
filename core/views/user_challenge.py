@@ -9,11 +9,15 @@ from rest_framework.permissions import IsAuthenticated
 from django.db import models
 from django.db import IntegrityError
 from rest_framework import status
+from core.filters.user_challenge import UserChallengeFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 class UserChallengeViewSet(ModelViewSet):
     queryset = UserChallenge.objects.all()
     serializer_class = UserChallengeSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserChallengeFilter
 
     def get_queryset(self):
         """
