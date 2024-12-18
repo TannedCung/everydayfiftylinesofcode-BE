@@ -24,7 +24,7 @@ class GitHubCommitSerializer(serializers.ModelSerializer):
     class Meta:
         model = GitHubCommit
         fields = [
-            'sha',
+            'oid',
             'github_event',
             'author',
             'message',
