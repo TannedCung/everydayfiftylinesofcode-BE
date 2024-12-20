@@ -40,6 +40,20 @@ class ChallengeSerializer(serializers.ModelSerializer):
             
         return super().update(instance, validated_data)
 
+    def validate(self, data):
+        """
+        Check that end_date is after start_date
+        """
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        if end_date and start_date and end_date <= start_date:
+            raise serializers.ValidationError({
+                "end_date": "End date must be at least one day after start date"
+            })
+
+        return data
+
 class ChallengeUserSerializer(serializers.ModelSerializer):
     user_info = serializers.SerializerMethodField()
     challenge_progress = serializers.SerializerMethodField()
