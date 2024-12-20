@@ -29,11 +29,21 @@ class UserChallengeViewSet(ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            self.perform_create(serializer)
+            instance = self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
+            # Update progress after creation
+            result = instance.update_progress()
+            
+            # Merge progress data with serializer data
+            response_data = {
+                **serializer.data,
+                'progress': result['progress'],
+                'progress_detail': result['progress_detail']
+            }
+            
             return Response(
-                serializer.data, 
-                status=status.HTTP_201_CREATED, 
+                response_data,
+                status=status.HTTP_201_CREATED,
                 headers=headers
             )
         except IntegrityError:
@@ -44,9 +54,13 @@ class UserChallengeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Automatically associate the user with the created challenge.
+        Automatically associate the user with the created challenge and return instance.
         """
-        serializer.save(user=self.request.user, start_date=now().date())
+        instance = serializer.save(
+            user=self.request.user, 
+            start_date=now().date()
+        )
+        return instance
     
     @action(detail=True, methods=['post'], url_path='update-progress')
     def update_progress(self, request, pk=None):
