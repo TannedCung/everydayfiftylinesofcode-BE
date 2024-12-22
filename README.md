@@ -9,18 +9,32 @@ The "everydayfiftylinesofcode-BE" project is designed to encourage developers to
 - Progress reports and analytics
 - Integration with popular code repositories
 - Notifications and reminders
+- Asynchronous task processing with Celery
+- Automated GitHub activity tracking
 
-## Getting Started
-
-### Prerequisites
+## Prerequisites
 - Python 3.8+
 - Django 3.2+
 - PostgreSQL
+- Redis (for Celery)
+- Docker & Docker Compose (optional)
+
+### Project Structure
+```
+daily50/          # Main project directory
+├── core/         # Core application
+│   ├── tasks/    # Celery tasks
+│   └── ...
+├── daily50/      # Project configuration
+│   ├── celery.py # Celery configuration
+│   └── ...
+└── docker/       # Docker configurations
+```
 
 ### Installation
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/everydayfiftylinesofcode-BE.git
+    git clone https://github.com/TannedCung/everydayfiftylinesofcode-BE.git
     cd everydayfiftylinesofcode-BE
     ```
 
@@ -40,15 +54,14 @@ The "everydayfiftylinesofcode-BE" project is designed to encourage developers to
     python manage.py migrate
     ```
 
-5. Create a superuser:
-    ```bash
-    python manage.py createsuperuser
-    ```
+# Start Django
+python manage.py runserver
 
-6. Run the development server:
-    ```bash
-    python manage.py runserver
-    ```
+# Start Celery worker
+celery -A daily50 worker -l INFO
+
+# Start Celery beat (for periodic tasks)
+celery -A daily50 beat -l INFO
 
 ### Usage
 - Access the application at `http://127.0.0.1:8000/`
