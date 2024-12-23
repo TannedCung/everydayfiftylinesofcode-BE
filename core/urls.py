@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views.login import user_profile, github_callback, RefreshTokenView
 from .views.user_activity import get_user_commits, GitHubEventViewSet, GitHubCommitViewSet, GithubFileChangeViewSet
 from .views.challenges import ChallengeViewSet
+from core.views.club import ClubViewSet
 
 # Define a router for the viewsets
 router = DefaultRouter()
@@ -12,6 +13,7 @@ router.register(r'github/commits', GitHubCommitViewSet, basename='commit')
 router.register(r'github/changes', GithubFileChangeViewSet, basename='change')
 
 router.register(f'challenge', ChallengeViewSet, basename='challenge')
+router.register(f'club', ClubViewSet, basename='club')
 router.register(r'user_challenges', UserChallengeViewSet, basename='userchallenge')
 
 # Add other non-viewset endpoints
