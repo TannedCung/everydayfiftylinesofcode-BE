@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+import uuid
 from django.conf import settings
 from storages.backends.s3boto3 import S3Boto3Storage
 
@@ -8,11 +9,15 @@ class MinioStorage(S3Boto3Storage):
     default_acl = 'private'
 
 def challenge_image_path(instance, filename):
-    return f'challenges/{instance.id}/{filename}'
+    """Generate path using UUID instead of ID"""
+    if not instance.uuid:
+        instance.uuid = uuid.uuid4()
+    return f'challenges/{instance.uuid}/{filename}'
 
 storage = MinioStorage()
 
 class Challenge(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     TYPE_CHOICES = [
         ('commits', 'Commits'),
         ('lines_of_code', 'Lines of Code'),
