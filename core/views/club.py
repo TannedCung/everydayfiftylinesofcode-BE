@@ -11,3 +11,9 @@ class ClubViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClubFilter
+
+    def perform_create(self, serializer):
+        # Save club with creator
+        club = serializer.save(created_by=self.request.user)
+        # Add creator as member
+        club.members.add(self.request.user)

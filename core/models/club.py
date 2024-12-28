@@ -16,6 +16,7 @@ class Club(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     members = models.ManyToManyField(User, related_name='clubs')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_clubs')
     background_image = models.ImageField(upload_to=club_image_path, storage=storage, null=True, blank=True)
     avatar = models.ImageField(upload_to=club_image_path, storage=storage, null=True, blank=True)
 
