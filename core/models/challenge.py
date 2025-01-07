@@ -3,6 +3,7 @@ from django.db import models
 import uuid
 from django.conf import settings
 from storages.backends.s3boto3 import S3Boto3Storage
+from core.permissions.mixins import ResourceMixin
 
 class MinioStorage(S3Boto3Storage):
     location = 'challenges'
@@ -16,7 +17,7 @@ def challenge_image_path(instance, filename):
 
 storage = MinioStorage()
 
-class Challenge(models.Model):
+class Challenge(ResourceMixin, models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     TYPE_CHOICES = [
         ('commits', 'Commits'),
@@ -75,3 +76,10 @@ class Challenge(models.Model):
             )
             
         return urls
+
+    def save(self, *args, **kwargs):
+        is_new = not self.pk
+        super().save(*args, **kwargs)
+        
+        if is_new:
+            self.assign_role(self.created_by, 'OWNER')
