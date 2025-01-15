@@ -11,9 +11,10 @@ class Actions(str, Enum):
     EDIT = 'EDIT'
     CREATE = 'CREATE'
     MANAGE_ROLES = 'MANAGE_ROLES'
+    MANAGE_MEMBERS = 'MANAGE_MEMBERS'  # Add this new action
 
 ROLE_PERMISSIONS = {
-    Roles.OWNER: [Actions.DELETE, Actions.GET, Actions.EDIT, Actions.CREATE, Actions.MANAGE_ROLES],
-    Roles.ADMIN: [Actions.GET, Actions.EDIT, Actions.CREATE],
+    Roles.OWNER: [Actions.DELETE, Actions.GET, Actions.EDIT, Actions.CREATE, Actions.MANAGE_ROLES, Actions.MANAGE_MEMBERS],
+    Roles.ADMIN: [Actions.GET, Actions.EDIT, Actions.CREATE, Actions.MANAGE_MEMBERS],
     Roles.MEMBER: [Actions.GET]
 }

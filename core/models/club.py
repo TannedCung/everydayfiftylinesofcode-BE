@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from storages.backends.s3boto3 import S3Boto3Storage
 from core.permissions.mixins import ResourceMixin
+from core.permissions.member_management import MemberManagementMixin
 
 class MinioStorage(S3Boto3Storage):
     location = 'clubs'
@@ -13,7 +14,7 @@ def club_image_path(instance, filename):
 
 storage = MinioStorage()
 
-class Club(ResourceMixin, models.Model):
+class Club(MemberManagementMixin, ResourceMixin, models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     members = models.ManyToManyField(User, related_name='clubs')
@@ -23,6 +24,12 @@ class Club(ResourceMixin, models.Model):
 
     def __str__(self):
         return self.name
+
+    def perform_create(self, serializer):
+        # Save club with creator
+        club = serializer.save(created_by=self.request.user)
+        # Add creator as member
+        club.members.add(self.request.user)
 
     def save(self, *args, **kwargs):
         is_new = not self.pk
