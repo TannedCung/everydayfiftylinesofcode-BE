@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from ..constants import Actions
 
 class MemberManagementMixin:
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='add_member')
     def add_member(self, request, pk=None):
         obj = self.get_object()
         user_id = request.data.get('user_id')
@@ -22,7 +22,7 @@ class MemberManagementMixin:
         
         return Response({'status': 'member added'})
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='remove_member')
     def remove_member(self, request, pk=None):
         obj = self.get_object()
         user_id = request.data.get('user_id')

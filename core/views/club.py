@@ -4,8 +4,9 @@ from core.serializers.club import ClubSerializer
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from core.filters.club import ClubFilter
+from core.permissions.member_management import MemberManagementMixin
 
-class ClubViewSet(viewsets.ModelViewSet):
+class ClubViewSet(MemberManagementMixin, viewsets.ModelViewSet):
     queryset = Club.objects.all()
     serializer_class = ClubSerializer
     permission_classes = [IsAuthenticated]

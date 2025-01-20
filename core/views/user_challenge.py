@@ -11,8 +11,9 @@ from django.db import IntegrityError
 from rest_framework import status
 from core.filters.user_challenge import UserChallengeFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from core.permissions.member_management import MemberManagementMixin
 
-class UserChallengeViewSet(ModelViewSet):
+class UserChallengeViewSet(MemberManagementMixin, ModelViewSet):
     queryset = UserChallenge.objects.all()
     serializer_class = UserChallengeSerializer
     permission_classes = [IsAuthenticated]
