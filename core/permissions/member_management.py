@@ -44,3 +44,33 @@ class MemberManagementMixin:
         obj.roles.filter(user=user).delete()
         
         return Response({'status': 'member removed'})
+
+    @action(detail=True, methods=['post'], url_path='join')
+    def join_challenge(self, request, pk=None):
+        obj = self.get_object()
+        user = request.user
+        
+        if obj.members.filter(id=user.id).exists():
+            return Response({'error': 'already a member'}, status=400)
+            
+        obj.members.add(user)
+        obj.assign_role(user, 'MEMBER')
+        
+        return Response({'status': 'joined challenge'})
+    
+    @action(detail=True, methods=['post'], url_path='leave')  
+    def leave_challenge(self, request, pk=None):
+        obj = self.get_object()
+        user = request.user
+
+        if not obj.members.filter(id=user.id).exists():
+            return Response({'error': 'not a member'}, status=400)
+            
+        owner_role = obj.roles.filter(user=user, role='OWNER').exists()
+        if owner_role:
+            return Response({'error': 'owner cannot leave challenge'}, status=400)
+            
+        obj.members.remove(user)
+        obj.roles.filter(user=user).delete()
+        
+        return Response({'status': 'left challenge'})
