@@ -14,7 +14,7 @@ router.register(r'github/changes', GithubFileChangeViewSet, basename='change')
 
 router.register(f'challenge', ChallengeViewSet, basename='challenge')
 router.register(f'club', ClubViewSet, basename='club')
-router.register(r'user_challenges', UserChallengeViewSet, basename='userchallenge')
+# router.register(r'user_challenges', UserChallengeViewSet, basename='userchallenge')
 
 # Add other non-viewset endpoints
 urlpatterns = [
