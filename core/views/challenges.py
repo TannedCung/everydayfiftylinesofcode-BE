@@ -1,4 +1,5 @@
 # challenges.py
+from core.permissions.member_management import MemberManagementMixin
 from rest_framework import viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from core.models.challenge import Challenge
@@ -12,7 +13,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from core.models.user_challenge import UserChallenge
 
-class ChallengeViewSet(viewsets.ModelViewSet):
+class ChallengeViewSet(MemberManagementMixin, viewsets.ModelViewSet):
     queryset = Challenge.objects.all()
     serializer_class = ChallengeSerializer
     filter_backends = [DjangoFilterBackend]

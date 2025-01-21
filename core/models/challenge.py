@@ -52,6 +52,11 @@ class Challenge(ResourceMixin, models.Model):
         null=True,
         blank=True
     )
+    members = models.ManyToManyField(
+        User,
+        through='UserChallenge',
+        related_name='challenges'
+    )
 
     class Meta:
         ordering = ['name'] 
