@@ -2,6 +2,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
+from django.db import models
+import datetime
 from ..constants import Actions
 
 class MemberManagementMixin:
@@ -74,3 +76,42 @@ class MemberManagementMixin:
         obj.roles.filter(user=user).delete()
         
         return Response({'status': 'left challenge'})
+    
+    @action(detail=True, methods=['get'], url_path='member-stats')
+    def get_member_stats(self, request, pk=None):
+        """
+        Get member statistics from the through model of members ManyToManyField
+        """
+        obj = self.get_object()
+        through_model = obj.members.through
+    
+        try:
+            stats = through_model.objects.get(
+                **{
+                    f'{obj._meta.model_name}_id': obj.id,
+                    'user_id': request.user.id
+                }
+            )
+            
+            excluded_fields = ['id', 'user_id', f'{obj._meta.model_name}_id']
+            stats_data = {}
+            
+            for field in stats._meta.fields:
+                if field.name not in excluded_fields:
+                    value = getattr(stats, field.name)
+                    # Handle model instances
+                    if isinstance(value, models.Model):
+                        stats_data[field.name] = value.id
+                    # Handle date/datetime
+                    elif isinstance(value, (datetime.date, datetime.datetime)):
+                        stats_data[field.name] = value.isoformat()
+                    else:
+                        stats_data[field.name] = value
+            
+            return Response(stats_data)
+            
+        except through_model.DoesNotExist:
+            return Response(
+                {'error': 'You are not a member of this object'},
+                status=404
+            )
