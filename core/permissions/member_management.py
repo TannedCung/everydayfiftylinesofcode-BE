@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.db import models
 import datetime
+from rest_framework.pagination import PageNumberPagination
+
 from ..constants import Actions
 
 class MemberManagementMixin:
@@ -115,3 +117,42 @@ class MemberManagementMixin:
                 {'error': 'You are not a member of this object'},
                 status=404
             )
+        
+    @action(detail=False, methods=['get'], url_path='my-participated')
+    def get_participated_resources(self, request):
+        """Get all resources where user is a member with relationship details"""
+        through_model = self.get_queryset().model.members.through
+        page_size = request.query_params.get('page_size', 10)
+        
+        # Get all relationships for this user
+        relationships = through_model.objects.filter(
+            user_id=request.user.id
+        ).select_related('user')
+        
+        # Apply pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = page_size
+        page = paginator.paginate_queryset(relationships, request)
+        
+        # Process member details
+        resources_data = []
+        for rel in page:
+            # Get relationship stats
+            stats = {}
+            excluded_fields = ['id', 'user_id', f'{self.get_queryset().model._meta.model_name}_id']
+            
+            for field in rel._meta.fields:
+                if field.name not in excluded_fields:
+                    value = getattr(rel, field.name)
+                    if isinstance(value, models.Model):
+                        stats[field.name] = str(value.id)
+                    elif isinstance(value, (datetime.date, datetime.datetime)):
+                        stats[field.name] = value.isoformat()
+                    else:
+                        stats[field.name] = value
+            
+            resources_data.append({
+                'stats': stats
+            })
+        
+        return paginator.get_paginated_response(resources_data)
